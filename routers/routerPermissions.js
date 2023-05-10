@@ -5,7 +5,28 @@ let permissions = require("../data/permissions")
 let users = require("../data/user")
 
 routerPermissions.get("/", (req,res) => {
+    let text = req.query.text
+    if ( text != undefined){
+        let permissionsWithText = permissions.filter(p => p.text.includes(text))
+        res.json(permissionsWithText)
+        return
+    }
     res.json(permissions)
+})
+
+routerPermissions.get("/:id", (req,res) => {
+    let id = req.params.id
+    if ( id == undefined){
+        res.status(400).json({ error: "no id"})
+        return 
+    }
+    let permission = permissions.find( p => p.id == id )
+    if ( permission == undefined){
+        res.status(400).json({ error: "invalid id"})
+        return
+    }
+
+    res.json(permission)
 })
 
 routerPermissions.post("/", (req, res) => {
