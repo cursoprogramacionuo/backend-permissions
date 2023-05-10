@@ -3,6 +3,7 @@ const routerPermissions = express.Router();
 
 let permissions = require("../data/permissions")
 let users = require("../data/user")
+let authorizers = require("../data/authorizers")
 
 routerPermissions.get("/", (req,res) => {
     let text = req.query.text
@@ -35,10 +36,10 @@ routerPermissions.post("/", (req, res) => {
     let userPassword = req.body.userPassword
 
     // validación
-    let listUsers =  users.filter(
+    let user =  users.find(
         u => u.email == userEmail && u.password == userPassword )
 
-    if ( listUsers.length == 0 ){
+    if ( user == undefined ){
         return res.status(401).json({ error: "no autorizado "})   
     }
 
@@ -46,9 +47,6 @@ routerPermissions.post("/", (req, res) => {
     let errors = []
     if (text == undefined){
         errors.push("no text in the body")
-    }
-    if ( userId == undefined){
-        errors.push("no userId in the body")
     }
     if ( errors.length > 0 ){
         return res.status(400).json({ erros: errors})
@@ -60,12 +58,54 @@ routerPermissions.post("/", (req, res) => {
         id: lastId+1, 
         text: text, 
         approbedBy:[], 
-        userId: listUsers[0].id 
+        userId: user.id 
     })
 
     res.json({ id: lastId+1 })
     // 1 { clave: valor}
 })
 
+routerPermissions.put("/:id", (req,res) => {
+    let permissionId = req.params.id
+    if ( permissionId == undefined){
+        res.status(400).json({ error: "no id "})
+        return
+    }
+    let permission = permissions.find(p => p.id == permissionId)
+    if ( permission == undefined){
+        res.status(400).json({ error: "no permission with this id"})
+        return
+    }
+    let text = req.body.text
+    if( text != undefined){
+        permission.text = text;
+    }
+
+    res.json({ modifiyed: true })
+})
+
+routerPermissions.put("/:id/approvedBy", (req,res) =>{
+    let permissionId = req.params.id
+    let authorizerEmail = req.body.authorizerEmail
+    let authorizerPassword = req.body.authorizerPassword
+
+    // autent
+    let authorizer = authorizers.find(
+        a => a.email == authorizerEmail && a.password == authorizerPassword)
+
+    if ( authorizer == undefined){
+        return res.status(401).json({ error: "no autorizado"})
+    }
+
+    // calidac
+    if ( permissionId == undefined){
+        return res.status(400).json({ error: "no permissionId"})
+    }
+
+    let permission = permissions.find( p => p.id == permissionId)
+    permission.approvedBy.push(authorizer.id)
+
+    res.json(permission)
+})
 
 module.exports = routerPermissions
