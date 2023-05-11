@@ -1,7 +1,6 @@
 const express = require("express")
 let routerLogin = express.Router();
 let users = require("../data/user")
-let authorizer = require("../data/authorizers")
 let jwt = require("jsonwebtoken")
 
 routerLogin.post("/", (req,res) => {
